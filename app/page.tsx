@@ -11,6 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@radix-ui/react-popover
 import { Slider } from '@radix-ui/react-slider';
 import { beep } from '@/utils/audio';
 import SocialMediaLinks from '@/components/social-media-link';
+import * as cocossd from '@tensorflow-models/coco-ssd'
+import '@tensorflow/tfjs-backend-cpu'
+import '@tensorflow/tfjs-backend-webgl'
+import { ObjectDetection } from '@tensorflow-models/coco-ssd';
 
 type Props = {};
 
@@ -24,10 +28,23 @@ const HomePage = (props: Props) => {
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [autoRecordEnabled, setAutoRecordEnabled] = useState<boolean>(false);
   const [volume, setVolume] = useState(0.8);
+  const [model,setModel] = useState<ObjectDetection>();
+  const [loading, setLoading] = useState(false)
 
+  //hooks
   useEffect(() => {
-    // Additional setup or side effects can go here
+    setLoading(true);
+    initModel();
   }, []);
+
+  async function initModel(){
+    const loadedModel: ObjectDetection = await cocossd.load({
+      base:'mobilenet_v2'
+    });
+    setModel(loadedModel);
+
+
+  }
 
   return (
     <div className='flex h-screen'>
@@ -151,14 +168,10 @@ const HomePage = (props: Props) => {
       <ul className="space-y-4">
       <li>
           <strong>Dark Mode/Sys Theme 🌗</strong>
-          <p>Toggle between dark mode and system theme.</p>
-          <Button className="my-2 h-6 w-6" variant="outline" size="icon">
-            <SunIcon size={14} />
-          </Button>{" "}
-          /{" "}
-          <Button className="my-2 h-6 w-6" variant="outline" size="icon">
-            <MoonIcon size={14} />
-          </Button>
+          <p className=' pb-2'>Toggle between dark mode and system theme.</p>
+          <div className='relative'>
+            <ModeToggle/>
+          </div>
         </li>
         <li>
           <strong>Horizontal Flip ↔️</strong>
