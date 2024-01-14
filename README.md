@@ -6,3 +6,4 @@
     @tensorflow/tfjs-backend-cpu
     @tensorflow/tfjs-backend-webgl
     coco ssd -> npm i @tensorflow-models/coco-ssd
+# media recorder api

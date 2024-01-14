@@ -4,7 +4,7 @@ import Webcam from 'react-webcam';
 import { Separator } from '@/components/ui/separator';
 import { ModeToggle } from '@/components/theme-toggle';
 import { Button } from '@/components/ui/button';
-import { Camera, FlipHorizontal, MoonIcon, PersonStanding, SunIcon, Video, Volume2 } from 'lucide-react';
+import { Camera, Currency, FlipHorizontal, MoonIcon, PersonStanding, SunIcon, Video, Volume2 } from 'lucide-react';
 import { Rings } from 'react-loader-spinner';
 import { toast } from 'sonner';
 import { Popover, PopoverContent, PopoverTrigger } from '@radix-ui/react-popover';
@@ -14,9 +14,14 @@ import SocialMediaLinks from '@/components/social-media-link';
 import * as cocossd from '@tensorflow-models/coco-ssd'
 import '@tensorflow/tfjs-backend-cpu'
 import '@tensorflow/tfjs-backend-webgl'
-import { ObjectDetection } from '@tensorflow-models/coco-ssd';
+import { DetectedObject, ObjectDetection } from '@tensorflow-models/coco-ssd';
+import { drawOnCanvas } from '@/utils/draw';
 
 type Props = {};
+
+//local variable as it has no work in frontend part to show or doin something else 
+
+let interval:any = null; 
 
 const HomePage = (props: Props) => {
   // To show the object red and green
@@ -24,7 +29,7 @@ const HomePage = (props: Props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // State variables
-  const [mirrored, setMirrored] = useState<boolean>(false);
+  const [mirrored, setMirrored] = useState<boolean>(true);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [autoRecordEnabled, setAutoRecordEnabled] = useState<boolean>(false);
   const [volume, setVolume] = useState(0.8);
@@ -42,9 +47,30 @@ const HomePage = (props: Props) => {
       base:'mobilenet_v2'
     });
     setModel(loadedModel);
-
-
   }
+
+  useEffect(()=>{
+    if(model){
+      setLoading(false)
+    }
+  })
+
+  async function runPrediction(){
+    if(model && webcamRef.current && webcamRef.current.video && webcamRef.current.video.readyState === 4){
+      const predictions: DetectedObject[] = await model.detect(webcamRef.current.video);
+      
+      resizeCanvas(canvasRef,webcamRef);
+      drawOnCanvas(mirrored,predictions,canvasRef.current?.getContext('2d'))
+    }
+  }
+
+  useEffect(() => {
+    interval = setInterval(() => {
+      runPrediction();
+    }, 100)
+    return () => clearInterval(interval)
+  }, [webcamRef.current, model,mirrored])
+  
 
   return (
     <div className='flex h-screen'>
@@ -141,6 +167,8 @@ const HomePage = (props: Props) => {
           <RenderFeatureHighlightsSection />
         </div>
       </div>
+      {/* loading screent text and animation */}
+      {loading && <div className='z-50 absolute h-full w-full flex items-center justify-center bg-primary-foreground'>Gettings thing reading plaase wait a bit &nbsp;.&nbsp;.&nbsp;.<Rings height={50} color='red'></Rings></div>}
     </div>
   );
 
@@ -248,3 +276,17 @@ const HomePage = (props: Props) => {
 };
 
 export default HomePage;
+function resizeCanvas(canvasRef: React.RefObject<HTMLCanvasElement>, webcamRef: React.RefObject<Webcam>) {
+  const canvas = canvasRef.current;
+  const video= webcamRef?.current?.video;
+
+  if((canvas && video)){
+    const {videoWidth,videoHeight} = video;
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
+  }
+
+
+
+}
+
